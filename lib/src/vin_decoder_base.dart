@@ -9,6 +9,7 @@ class VIN {
     "CNG": 6,
     "Gasoline": 4,
     "Battery": 2,
+    "Electric":2,
     "BEV":2,
     "LNG": 7,
     "Hydrogen": 8,
