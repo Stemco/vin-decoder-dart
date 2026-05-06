@@ -23,6 +23,16 @@ class VIN {
     "Fuel Cell": 18
   };
 
+// CASE type statement NHTSA parameter  vehicletype =
+//   "TRAILER" then assign value to model_n_fuel\vehType = 6  AND
+//                 assign model_n_fuel\vehBody where NHTSA parameter trailerbodytype =
+//                     "Intermodal Container Chassis or Trailer": 109,
+//                     "Tank Trailer": 138,
+//                      Default:0   
+//                  assign value to models n fuels\vehLength where NHTSA parameter trailerlength > 0
+//                     trailerlength/3.281  Note this converts feet to meters  truncate results to 2 decimal places.   
+
+
   /// The VIN that the class was instantiated with.
   final String number;
 
