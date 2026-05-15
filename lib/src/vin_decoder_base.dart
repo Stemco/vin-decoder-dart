@@ -53,7 +53,8 @@ class VIN {
   /// 
   /// [wmi], [vds], and [vis] are populated based on [number]. 
   VIN._({required this.number, required this.extended}) : 
-    wmi = number.substring(0, 3),
+  // check for 6 digit WMIs, otherwise return 3 digit
+    wmi = number[2] != '9' ? number.substring(0, 3) : number.substring(0, 3) + number.substring(11, 14),
     vds = number.substring(3, 9),
     vis = number.substring(9, 17);
 
