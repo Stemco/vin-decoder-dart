@@ -1,7 +1,10 @@
+import 'dart:developer';
+
 import 'manufacturers.dart';
 import 'nhtsa_model.dart';
+import 'nhtsa_rule.dart';
+import 'nhtsa_rules.dart';
 import 'year_map.dart';
-
 class VIN {
   /// Hashmap containing fuel names and their respective #
   static const Map<String, int> fuelMap = {
@@ -70,7 +73,7 @@ class VIN {
   /// 
   /// If a number is provided, validates that number. Otherwise, it validates the number this object was initialized with.
   bool valid([String? number]) {
-    String value = normalize(number != null ? number : this.number);
+    final String value = normalize(number ?? this.number);
     return RegExp(r"^[a-zA-Z0-9]+$").hasMatch(value) && value.length == 17;
   }
 
@@ -85,22 +88,22 @@ class VIN {
 
   /// Obtain the 2-character region code for the manufacturing region.
   String getRegion() {
-    if (RegExp(r"[A-H]", caseSensitive: false).hasMatch(this.number[0])) {
+    if (RegExp("[A-H]", caseSensitive: false).hasMatch(number[0])) {
       return "AF";
     }
-    if (RegExp(r"[J-R]", caseSensitive: false).hasMatch(this.number[0])) {
+    if (RegExp("[J-R]", caseSensitive: false).hasMatch(number[0])) {
       return "AS";
     }
-    if (RegExp(r"[S-Z]", caseSensitive: false).hasMatch(this.number[0])) {
+    if (RegExp("[S-Z]", caseSensitive: false).hasMatch(number[0])) {
       return "EU";
     }
-    if (RegExp(r"[1-5]", caseSensitive: false).hasMatch(this.number[0])) {
+    if (RegExp("[1-5]", caseSensitive: false).hasMatch(number[0])) {
       return "NA";
     }
-    if (RegExp(r"[6-7]", caseSensitive: false).hasMatch(this.number[0])) {
+    if (RegExp("[6-7]", caseSensitive: false).hasMatch(number[0])) {
       return "OC";
     }
-    if (RegExp(r"[8-9]", caseSensitive: false).hasMatch(this.number[0])) {
+    if (RegExp("[8-9]", caseSensitive: false).hasMatch(number[0])) {
       return "SA";
     }
     return "Unknown";
@@ -111,12 +114,12 @@ class VIN {
   /// If the full name cannot be found, returns null.
   String? getManufacturer() {
     // Check for the standard case - a 3 character WMI
-    if (manufacturers.containsKey(this.wmi)) {
-      return manufacturers[this.wmi];
+    if (manufacturers.containsKey(wmi)) {
+      return manufacturers[wmi];
     } else {
       // Some manufacturers only use the first 2 characters for manufacturer
       // identification, and the third for the class of vehicle.
-      var id = this.wmi.substring(0, 2);
+      var id = wmi.substring(0, 2);
       if (manufacturers.containsKey(id)) {
         return manufacturers[id];
       } else {
@@ -131,22 +134,25 @@ class VIN {
   /// 
   /// If the region is EU, returns null
   String? getChecksum() {
-    return (getRegion() != "EU") ? this.number[8] : null;
+    return (getRegion() != "EU") ? number[8] : null;
   }
 
   /// Extract the single-character model year from the [number].
-  String modelYear() => this.number[9];
+  String modelYear() => number[9];
 
   /// Extract the single-character assembly plant designator from the [number].
-  String assemblyPlant() => this.number[10];
+  String assemblyPlant() => number[10];
 
   /// Extract the serial number from the [number].
-  String serialNumber() => this.number.substring(12, 17);
+  String serialNumber() => number.substring(12, 17);
 
-  /// Assigns the 
+  /// True if NHTSA returned data for this VIN. False if the fetch failed or never ran.
+  bool get hasExtendedInfo => _vehicleInfo.isNotEmpty;
+
+  /// Assigns the NHTSA values to the vehicle based off VIN
   Future<void> _fetchExtendedVehicleInfo() async {
-    if (this._vehicleInfo.isEmpty && extended == true) {
-      this._vehicleInfo = await NHTSA.decodeVinValues(this.number) ?? {};
+    if (_vehicleInfo.isEmpty && extended == true) {
+      _vehicleInfo = await NHTSA.decodeVinValues(number) ?? {};
     }
   }
 
@@ -154,7 +160,7 @@ class VIN {
   /// is enabled.
   Future<int> getFuelTypeAsync() async {
     await _fetchExtendedVehicleInfo();
-    final String? fuelType = this._vehicleInfo['FuelTypePrimary'] as String?;
+    final String? fuelType = _vehicleInfo['FuelTypePrimary'] as String?;
     if (fuelType == null) return 0;
     
     final String fuelLower = fuelType.toLowerCase();
@@ -170,32 +176,126 @@ class VIN {
   /// is enabled.
   Future<String> getMakeAsync() async {
     await _fetchExtendedVehicleInfo();
-    return this._vehicleInfo['Make'] as String? ?? "";
+    return _vehicleInfo['Make'] as String? ?? "";
   }
 
   /// Get the Make ID of a vehicle from the NHTSA database if the [extended] mode is enabled
   Future<int> getMakeIdAsync() async {
     await _fetchExtendedVehicleInfo();
-    return this._vehicleInfo.keys.contains("MakeID") ? int.parse(this._vehicleInfo["MakeID"]): 0;
+    return _vehicleInfo.keys.contains("MakeID") ? int.parse(_vehicleInfo["MakeID"]): 0;
   }
 
   /// Get the Model of the vehicle from the NHTSA database if [extended] mode is enabled.
   Future<String> getModelAsync() async {
     await _fetchExtendedVehicleInfo();
-    return (this._vehicleInfo.keys.contains("Model") ? this._vehicleInfo['Model'] as String? ?? "Unknown": "Unknown");
+    return (_vehicleInfo.keys.contains("Model") ? _vehicleInfo['Model'] as String? ?? "Unknown": "Unknown");
+  }
+
+  /// The NHTSA Model, or a generated "<descriptor> <noun> <length>" name if the
+  /// Model repeats the Make and [vehType] is listed in [NhtsaRules.modelNameNoun].
+  Future<String> getModelNameAsync(int vehType, {required bool metric}) async {
+    final String model = await getModelAsync();
+    if (model == 'Unknown' || model.trim().isEmpty) return model;
+
+    final String? noun = NhtsaRules.modelNameNoun[vehType];
+    if (noun == null) return model;
+
+    if (!NhtsaRuleEngine.isRedundantModel(model, [_info('Make'), _info('Manufacturer')])) {
+      return model;
+    }
+
+    final String descriptor = NhtsaRuleEngine.resolve(
+            NhtsaRules.modelNameDescriptorRules, _vehicleInfo, vehType: vehType) ?? '';
+
+    String length = '';
+    final String? lengthField = NhtsaRules.vehLengthFeetField[vehType];
+    if (lengthField != null) {
+      final double? feet = double.tryParse(_info(lengthField).replaceAll(',', ''));
+      if (feet != null && feet > 0) {
+        length = NhtsaRuleEngine.formatLength(feet, metric: metric);
+      }
+    }
+
+    if (descriptor.isEmpty && length.isEmpty) {
+      log('Model "$model" repeats make for $number (vehType $vehType); '
+          'no descriptor or length to build a name.', name: 'nhtsa_rules');
+      return model;
+    }
+
+    // Format. For "Trailer Reefer 53 Ft" instead, use [noun, descriptor, length].
+    return [descriptor, noun, length].where((part) => part.isNotEmpty).join(' ');
   }
 
   Future<String> getModelIdAsync() async {
     await _fetchExtendedVehicleInfo();
-    return (this._vehicleInfo.keys.contains("ModelID") ? this._vehicleInfo['ModelID'] as String? ?? "Unknown": "Unknown");
+    return (_vehicleInfo.keys.contains("ModelID") ? _vehicleInfo['ModelID'] as String? ?? "Unknown": "Unknown");
   }
 
   /// Get the Vehicle Type from the NHTSA database if [extended] mode is enabled.
   Future<String> getVehicleTypeAsync() async {
     await _fetchExtendedVehicleInfo();
-    return (this._vehicleInfo.keys.contains("VehicleType") ? this._vehicleInfo['VehicleType'] as String? ?? "0": "0");
+    return (_vehicleInfo.keys.contains("VehicleType") ? _vehicleInfo['VehicleType'] as String? ?? "0": "0");
   }
 
+  /// Raw trimmed NHTSA value for [key], or "" if missing.
+  String _info(String key) =>
+      ((_vehicleInfo[key] as String?) ?? '').trim();
+
+  /// Resolve Model_n_Fuel.vehType from NHTSA using [NhtsaRules.vehTypeRules].
+  /// Returns 0 if no rule matches or NHTSA data is unavailable.
+  Future<int> getVehTypeNoAsync() async {
+    await _fetchExtendedVehicleInfo();
+    if (_vehicleInfo.isEmpty) return 0;
+
+    final int result = NhtsaRuleEngine.resolve(NhtsaRules.vehTypeRules, _vehicleInfo) ?? 0;
+    if (result == 0) {
+      log('No vehType rule matched for $number: '
+          '${NhtsaRuleEngine.describeInputs(NhtsaRules.vehTypeRules, _vehicleInfo)}',
+          name: 'nhtsa_rules');
+    }
+    return result;
+  }
+
+  /// Resolve Model_n_Fuel.vehBody using [NhtsaRules.vehBodyRules].
+  /// Returns 0 if no rule matches or NHTSA data is unavailable.
+  Future<int> getVehBodyAsync(int vehType) async {
+    if (!NhtsaRuleEngine.hasRulesFor(NhtsaRules.vehBodyRules, vehType)) return 0;
+
+    await _fetchExtendedVehicleInfo();
+    if (_vehicleInfo.isEmpty) return 0;
+
+    final int result = NhtsaRuleEngine.resolve(NhtsaRules.vehBodyRules, _vehicleInfo, vehType: vehType) ?? 0;
+    if (result == 0) {
+      log('No vehBody rule matched for $number (vehType $vehType): '
+          '${NhtsaRuleEngine.describeInputs(NhtsaRules.vehBodyRules, _vehicleInfo, vehType: vehType)}',
+          name: 'nhtsa_rules');
+    }
+    return result;
+  }
+
+  /// Resolve Model_n_Fuel.vehLength (meters, truncated to 2 decimals).
+  /// Returns 0 if not applicable or not > 0.
+  Future<double> getVehLengthMetersAsync(int vehType) async {
+    final String? field = NhtsaRules.vehLengthFeetField[vehType];
+    if (field == null) return 0;
+
+    await _fetchExtendedVehicleInfo();
+
+    final double? feet = double.tryParse(_info(field).replaceAll(',', ''));
+    if (feet == null || feet <= 0) return 0;
+
+    return NhtsaRuleEngine.feetToMeters(feet);
+  }
+
+  /// Resolve Model_n_Fuel.vehClass from GVWR.
+  /// Returns 0 if not applicable or unparseable.
+  Future<int> getVehClassAsync(int vehType) async {
+    if (!NhtsaRules.vehClassFromGvwr.contains(vehType)) return 0;
+
+    await _fetchExtendedVehicleInfo();
+
+    return NhtsaRuleEngine.parseGvwrClass(_info('GVWR'));
+  }
   @override
-  String toString() => this.wmi + this.vds + this.vis;
+  String toString() => wmi + vds + vis;
 }
