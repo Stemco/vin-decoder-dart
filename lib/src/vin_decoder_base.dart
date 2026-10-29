@@ -296,6 +296,17 @@ class VIN {
 
     return NhtsaRuleEngine.parseGvwrClass(_info('GVWR'));
   }
+
+  /// Resolve Model_n_Fuel.vehAxles from NHTSA "Axles" field.
+  /// Returns 0 if not available or unparseable.
+  Future<int> getVehAxlesAsync() async {
+    await _fetchExtendedVehicleInfo();
+    
+    final String axlesStr = _info('Axles');
+    if (axlesStr.isEmpty) return 0;
+    
+    return int.tryParse(axlesStr) ?? 0;
+  }
   @override
   String toString() => wmi + vds + vis;
 }
