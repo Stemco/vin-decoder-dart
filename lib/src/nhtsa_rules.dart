@@ -79,23 +79,183 @@ class NhtsaRules {
   // ---------------------------------------------------------------------------
   static const List<NhtsaRule<int>> vehBodyRules = [
     // Trailers
+
+    // ---------------- Box / Van ----------------
     NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
       NhtsaCondition.equals('TrailerBodyType', 'Box or Van Enclosed Trailer'),
       NhtsaCondition.contains('OtherTrailerInfo', 'Reefer'),
     ], result: 143),
     NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
       NhtsaCondition.equals('TrailerBodyType', 'Box or Van Enclosed Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Refrigerated'),
+    ], result: 143),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Box or Van Enclosed Trailer'),
     ], result: 186),
+
+    // ---------------- Tankers (specific before generic) ----------------
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Asphalt'),
+    ], result: 145),
+    // Compressed gas MC-331 (248)
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Propane'),
+    ], result: 248),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('Trailer Type', 'Propane'),
+    ], result: 248),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'LPG'),
+    ], result: 248),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'with Hitch'),
+    ], result: 248),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Ammonia'),
+    ], result: 248),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', '331'),
+    ], result: 248),
+    // Cryogenic MC-338 (138) - liquid CO2 / LNG / nitrogen / oxygen
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Cryogenic'),
+    ], result: 138),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', "CO'2"),
+    ], result: 138),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'CO2'),
+    ], result: 138),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', '338'),
+    ], result: 138),
+    // Corrosive DOT-412 (247)
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Corrosive'),
+    ], result: 247),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', '412'),
+    ], result: 247),
+    // Chemical DOT-407 (172)
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Chemical'),
+    ], result: 172),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', '407'),
+    ], result: 172),
+    // Dry bulk / pneumatic (174)
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Pneumatic'),
+    ], result: 174),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Dry Bulk'),
+    ], result: 174),
+    // Food grade (246)
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Food'),
+    ], result: 246),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Sanitary'),
+    ], result: 246),
+    // Fuel DOT-406 / MC-306 (15)
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', '406'),
+    ], result: 15),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', '306'),
+    ], result: 15),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Petroleum'),
+    ], result: 15),
+    // Generic tank fallback - no specific tank code exists in the chart
     NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
       NhtsaCondition.equals('TrailerBodyType', 'Tank Trailer'),
     ], result: 138),
+
+    // ---------------- Flatbeds ----------------
+    // Extendable before Drop Deck (Manac lists "Straight/Drop Frame/Extendable")
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Flatbed or Platform Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Extendable'),
+    ], result: 89),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Flatbed or Platform Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Drop Deck'),
+    ], result: 88),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Flatbed or Platform Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Lowboy'),
+    ], result: 11),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Flatbed or Platform Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Low Boy'),
+    ], result: 11),
     NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
       NhtsaCondition.equals('TrailerBodyType', 'Flatbed or Platform Trailer'),
     ], result: 6),
+
+    // ---------------- Lowboy (equipment) ----------------
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Equipment Trailer'),
+    ], result: 11),
+
+    // ---------------- Dump ----------------
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Dump Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Side Dump'),
+    ], result: 22),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Dump Trailer'),
+      NhtsaCondition.contains('OtherTrailerInfo', 'Side-Dump'),
+    ], result: 22),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Dump Trailer'),
+    ], result: 4),
+
+    // ---------------- Direct lookup matches ----------------
     NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
       NhtsaCondition.equals('TrailerBodyType', 'Intermodal Container Chassis or Trailer'),
     ], result: 109),
-
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Logging Trailer'),
+    ], result: 19),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Dolly'),
+    ], result: 45),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Pole Trailer'),
+    ], result: 91),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Auto Transporter'),
+    ], result: 95),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Car Hauler Trailer'),
+    ], result: 95),
+    NhtsaRule(onlyForVehTypes: {VehTypeCode.trailer}, when: [
+      NhtsaCondition.equals('TrailerBodyType', 'Grain, Chip, or Gravel Trailer'),
+    ], result: 103),
     // Buses
     NhtsaRule(onlyForVehTypes: {VehTypeCode.bus, VehTypeCode.incomplete}, when: [
       NhtsaCondition.equals('BusType', 'Transit Bus'),
