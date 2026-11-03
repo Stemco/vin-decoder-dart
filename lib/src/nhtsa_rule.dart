@@ -145,10 +145,10 @@ class NhtsaRuleEngine {
       _emptyValues.contains(value.trim().toLowerCase());
 
   /// Formats a length given in FEET for a model name.
-  /// Imperial: whole feet ("53 Ft"). Metric: meters to 1 decimal ("16.2 M").
+  /// Imperial: whole feet with prime symbol ("53'"). Metric: meters to 1 decimal ("16.2 m").
   static String formatLength(double feet, {required bool metric}) {
-    if (metric) return '${(feet / feetPerMeter).toStringAsFixed(1)} M';
-    return '${feet.round()} Ft';
+    if (metric) return '${(feet / feetPerMeter).toStringAsFixed(1)} m';
+    return "${feet.round()}'";
   }
 
   /// Convert feet to meters, truncated (not rounded) to 2 decimal places.

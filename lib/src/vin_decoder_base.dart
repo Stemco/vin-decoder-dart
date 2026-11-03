@@ -191,9 +191,20 @@ class VIN {
     return (_vehicleInfo.keys.contains("Model") ? _vehicleInfo['Model'] as String? ?? "Unknown": "Unknown");
   }
 
-  /// The NHTSA Model, or a generated "<descriptor> <noun> <length>" name if the
-  /// Model repeats the Make and [vehType] is listed in [NhtsaRules.modelNameNoun].
-  Future<String> getModelNameAsync(int vehType, {required bool metric}) async {
+  /// The NHTSA Model, or a localized body type name if the Model repeats the Make.
+  /// 
+  /// If [bodyTypeMap] is provided and we have a redundant model name, looks up 
+  /// [vehBody] in this map to get a localized body type name (e.g., "Refrigerated" 
+  /// in English, "Refrigerados" in Spanish). Pass the appropriate language's 
+  /// bodyTypeTrailer map for localization.
+  /// 
+  /// Falls back to the descriptor-based logic (e.g., "Reefer Trailer 53'") if
+  /// no bodyTypeMap is provided or the vehBody lookup fails.
+  Future<String> getModelNameAsync(int vehType, {
+    required bool metric,
+    int vehBody = 0,
+    Map<int, String>? bodyTypeMap,
+  }) async {
     final String model = await getModelAsync();
     if (model == 'Unknown' || model.trim().isEmpty) return model;
 
@@ -204,9 +215,7 @@ class VIN {
       return model;
     }
 
-    final String descriptor = NhtsaRuleEngine.resolve(
-            NhtsaRules.modelNameDescriptorRules, _vehicleInfo, vehType: vehType) ?? '';
-
+    // Calculate length once
     String length = '';
     final String? lengthField = NhtsaRules.vehLengthFeetField[vehType];
     if (lengthField != null) {
@@ -216,13 +225,26 @@ class VIN {
       }
     }
 
+    // If a bodyTypeMap is provided and we have a valid vehBody, use the localized body type name
+    if (bodyTypeMap != null && vehBody > 0) {
+      final String? bodyTypeName = bodyTypeMap[vehBody];
+      if (bodyTypeName != null && bodyTypeName.isNotEmpty && !bodyTypeName.toLowerCase().contains('undefined')) {
+        // Build name with optional length: "Refrigerated 53'" or just "Refrigerated"
+        return length.isNotEmpty ? '$bodyTypeName $length' : bodyTypeName;
+      }
+    }
+
+    // Fall back to the original descriptor-based logic
+    final String descriptor = NhtsaRuleEngine.resolve(
+            NhtsaRules.modelNameDescriptorRules, _vehicleInfo, vehType: vehType) ?? '';
+
     if (descriptor.isEmpty && length.isEmpty) {
       log('Model "$model" repeats make for $number (vehType $vehType); '
           'no descriptor or length to build a name.', name: 'nhtsa_rules');
       return model;
     }
 
-    // Format. For "Trailer Reefer 53 Ft" instead, use [noun, descriptor, length].
+    // Format: "Reefer Trailer 53'"
     return [descriptor, noun, length].where((part) => part.isNotEmpty).join(' ');
   }
 
