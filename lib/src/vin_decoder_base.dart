@@ -146,12 +146,23 @@ class VIN {
   /// Extract the serial number from the [number].
   String serialNumber() => number.substring(12, 17);
 
-  /// True if NHTSA returned data for this VIN. False if the fetch failed or never ran.
-  bool get hasExtendedInfo => _vehicleInfo.isNotEmpty;
+  /// Whether this VIN is likely in the NHTSA database.
+  /// VINs starting with 6, 7, 8, or 9 are from regions (Oceania, South America)
+  /// whose vehicles are not imported into the USA and won't have NHTSA data.
+  bool get isNhtsaEligible {
+    if (number.isEmpty) return false;
+    final first = number[0];
+    // 6-7 = Oceania, 8-9 = South America — not in NHTSA
+    return first != '6' && first != '7' && first != '8' && first != '9';
+  }
 
-  /// Assigns the NHTSA values to the vehicle based off VIN
+  /// Whether extended info has been fetched (or skipped due to ineligibility).
+  bool get hasExtendedInfo => _vehicleInfo.isNotEmpty || !isNhtsaEligible;
+
+  /// Fetches extended vehicle info from NHTSA if not already fetched.
+  /// Skips the API call for VINs from regions not in the NHTSA database.
   Future<void> _fetchExtendedVehicleInfo() async {
-    if (_vehicleInfo.isEmpty && extended == true) {
+    if (_vehicleInfo.isEmpty && extended == true && isNhtsaEligible) {
       _vehicleInfo = await NHTSA.decodeVinValues(number) ?? {};
     }
   }
